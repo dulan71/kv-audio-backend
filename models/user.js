@@ -33,10 +33,7 @@ const userSchema = new mongoose.Schema({
         required : true
         
     },
-    whatsApp : {
-        type : String,
-        required : true
-    }
+    
 });
 
 const User = mongoose.model("User",userSchema);
