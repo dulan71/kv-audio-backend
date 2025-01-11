@@ -31,8 +31,9 @@ const userSchema = new mongoose.Schema({
     phone : {
         type : String,
         required : true
+        
     },
-    image : {
+    whatsApp : {
         type : String,
         required : true
     }
