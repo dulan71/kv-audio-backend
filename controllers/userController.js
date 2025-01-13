@@ -4,6 +4,8 @@ import bcrypt from "bcrypt";
 
 import jwt from "jsonwebtoken";
 
+import dotenv from "dotenv";
+
 export function registerUser(req,res){
 
     const data = req.body;
@@ -46,7 +48,7 @@ export function loginUser(req,res){
                   email : user.email,
                   userType : user.userType
 
-               },"dnx71")
+               },process.env.JWT_SECRET);
                res.json({message : "Login successful",token : token});
             
             }else{

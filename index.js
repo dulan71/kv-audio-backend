@@ -20,7 +20,7 @@ app.use((req, res, next)=> {
         token = token.replace("Bearer ","");
         
 
-        jwt.verify(token, "dnx71",
+        jwt.verify(token,process.env.JWT_SECRET,
             (err, decoded) => {
               
 
