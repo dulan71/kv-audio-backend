@@ -3,9 +3,12 @@ import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import userRouter from "./routes/userRouter.js";
 import productRouter from "./routes/productRouter.js";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
-let app = express() 
+dotenv.config();
+
+const app = express() ;
 
 app.use(bodyParser.json())
 
@@ -29,14 +32,13 @@ app.use((req, res, next)=> {
             });
     }
     next()
-})
+});
 
+let mongoUrl = process.env.MONGO_URL;
 
-let mongoUrl = "mongodb+srv://admin:123@cluster0.rggtm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+mongoose.connect(mongoUrl);
 
-mongoose.connect(mongoUrl)
-
-let connection = mongoose.connection
+let connection = mongoose.connection;
 
 connection.once("open",()=>{
     console.log("MonogoDB conect sucessfully")
@@ -44,6 +46,7 @@ connection.once("open",()=>{
 
 app.use("/api/users",userRouter)
 app.use("/api/products",productRouter)
+
 
 app.listen(3000,()=>{
     console.log("server is running on port 3000")
