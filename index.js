@@ -5,33 +5,25 @@ import userRouter from "./routes/userRouter.js";
 import productRouter from "./routes/productRouter.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import reviewRoter from "./routes/reviewRouter.js";
 
 dotenv.config();
 
-const app = express() ;
+const app = express();
 
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
-app.use((req, res, next)=> {
-    let token = req.header
-    ("Authorization");
+app.use((req, res, next) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  if (token != null) {
+    jwt.verify(token, process.env.JWT_SCRET, (error, decoded) => {
+      if (!error) {
+        req.user = decoded;
+      }
+    });
+  }
 
-    if(token != null) {
-        token = token.replace("Bearer ","");
-        
-
-        jwt.verify(token,process.env.JWT_SECRET,
-            (err, decoded) => {
-              
-
-              if(!err){
-                req.user = decoded;
-              }
-
-
-            });
-    }
-    next()
+  next();
 });
 
 let mongoUrl = process.env.MONGO_URL;
@@ -40,14 +32,14 @@ mongoose.connect(mongoUrl);
 
 let connection = mongoose.connection;
 
-connection.once("open",()=>{
-    console.log("MonogoDB conect sucessfully")
-})
+connection.once("open", () => {
+  console.log("MonogoDB conect sucessfully");
+});
 
-app.use("/api/users",userRouter)
-app.use("/api/products",productRouter)
+app.use("/api/users", userRouter);
+app.use("/api/products", productRouter);
+app.use("/api/reviews", reviewRoter);
 
-
-app.listen(3000,()=>{
-    console.log("server is running on port 3000")
+app.listen(3000, () => {
+  console.log("server is running on port 3000");
 });

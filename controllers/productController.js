@@ -2,7 +2,7 @@ import Product from "../models/product.js";
 
 export function addProduct(req,res){
 
-    console.log(req.user)
+    console.log(req.user.userType);
 
     if(req.user == null){
         res.status(401).json({
@@ -10,7 +10,7 @@ export function addProduct(req,res){
         })
         return
     }
-    if(req.user.role != "admin"){
+    if(req.user.userType != "admin"){
         res.status(403).json({
             message : "You are not authorized to perform this action"
         })

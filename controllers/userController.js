@@ -4,59 +4,65 @@ import bcrypt from "bcrypt";
 
 import jwt from "jsonwebtoken";
 
+// env file wala value use krnwa nam import dotenv from "dotenv"; meka import krla
+//dotenv.config(); me deka aniwaren danna natham code eka env file eke value read krnn be
 import dotenv from "dotenv";
 
-export function registerUser(req,res){
+dotenv.config();
 
-    const data = req.body;
 
-    data.password = bcrypt.hashSync(data.password,10)
+const jwtKey = process.env.JWT_SCRET;
 
-    const newUser = new User(data)
 
-   
- newUser.save().then(()=>{
-    res.json({message : "User registered successfully"})
- }).catch((error)=>{
-    res.status(500).json({error : "User registration failed"})
- })
-    
+export function registerUser(req, res) {
+  const data = req.body;
+
+  data.password = bcrypt.hashSync(data.password, 10);
+
+  const newUser = new User(data);
+
+  newUser
+    .save()
+    .then(() => {
+      res.json({ message: "User registered successfully" });
+    })
+    .catch((error) => {
+      res.status(500).json({ error: "User registration failed" });
+    });
 }
 
-export function loginUser(req,res){
-   const data = req.body;
+export function loginUser(req, res) {
+  const data = req.body;
 
-   User.findOne({
-      email : data.email
-   }).then (
-      (user)=>{
-         
-         if(user == null){
-            res.status(404).json({
-               error : "User not found"
-            })
-         }else{
+  User.findOne({
+    email: data.email,
+  }).then((user) => {
+    if (user == null) {
+      res.status(404).json({
+        error: "User not found",
+      });
+    } else {
+      const isPasswordCorrect = bcrypt.compareSync(
+        data.password,
+        user.password
+      );
+      data.password, user.password;
 
-            const isPasswordCorrect = bcrypt.compareSync(data.password, user.password);
-            (data.password, user.password);
+      if (isPasswordCorrect) {
+        const token = jwt.sign({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          userType: user.userType,
+          profilePicture : user.profilePicture
+        },process.env.JWT_SCRET);
 
-            if(isPasswordCorrect){
-               const token = jwt.sign({
-
-                  firstName : user.firstName,
-                  lastName : user.lastName,
-                  email : user.email,
-                  userType : user.userType
-
-               },process.env.JWT_SECRET);
-               res.json({message : "Login successful",token : token});
-            
-            }else{
-               res.status(401).json({
-                  error: "Login failed"
-               });
-            }
-         }
+        res.json({ message: "Login successful", token: token });
+      } else {
+        res.status(401).json({
+          error: "Login failed",
+        });
       }
-   )
+    }
+  });
 }
