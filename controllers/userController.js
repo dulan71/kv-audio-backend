@@ -54,7 +54,8 @@ export function loginUser(req, res) {
           lastName: user.lastName,
           email: user.email,
           userType: user.userType,
-          profilePicture : user.profilePicture
+          profilePicture : user.profilePicture,
+          phone: user.phone,
         },process.env.JWT_SCRET);
 
         res.json({ message: "Login successful", token: token });
@@ -65,4 +66,27 @@ export function loginUser(req, res) {
       }
     }
   });
+}
+
+export function isItAdmin(req){
+  let isAdmin = false;
+
+  if(req.user != null){
+      if(req.user.userType == "admin"){
+          isAdmin = true;
+      }
+  }
+
+  return isAdmin;
+}
+
+export function isItCustomer(req){
+  let isCustomer = false;
+
+  if(req.user != null){
+    if(req.user.userType == "customer"){
+      isCustomer = true;
+    }
+  }
+  return isCustomer;
 }
