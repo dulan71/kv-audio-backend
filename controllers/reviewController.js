@@ -35,7 +35,7 @@ export function getReviews(req,res){
         return;
 
     }
-    if(user.role == "admin"){
+    if(user.userType == "admin"){
         Review.find().then((reviews)=>{
             res.json(reviews);
         })
@@ -50,7 +50,7 @@ export function deleteReview(req,res){
         ({message : "Please login and try again"});
         return
     }
-    if(req.user.role == "admin"){
+    if(req.user.userType == "admin"){
         Review.deleteOne({
            email:email
         }).then(()=>{
@@ -65,7 +65,7 @@ export function deleteReview(req,res){
 
     }
 
-    if(req.user.role == "customer"){
+    if(req.user.userType == "customer"){
         if(req.user.email == email){
             Review.deleteOne({
                 email:email
@@ -96,7 +96,7 @@ export function approvedReview(req,res){
         return
     }
 
-    if(req.user.role == "admin"){
+    if(req.user.userType == "admin"){
         Review.updateOne(
             {
                 email : email
