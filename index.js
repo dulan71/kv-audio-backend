@@ -7,10 +7,12 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import reviewRoter from "./routes/reviewRouter.js";
 import InquiryRouter from "./routes/inquiryRouter.js";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
+app.use(cors());
 
 app.use(bodyParser.json());
 
