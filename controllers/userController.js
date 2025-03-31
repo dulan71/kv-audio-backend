@@ -92,3 +92,73 @@ export function isItCustomer(req){
   }
   return isCustomer;
 }
+//get user
+export function getUserDetails(req,res){
+  const userId = req.user.email;
+
+  User.findOne({email: userId}).select("-password").then((user)=>{
+    if(!user){
+      return res. status(404).json({error : "User not Found"});
+    }
+    res.json({ user });
+  }).catch((error)=>{
+    res.status(500).json({error: "failed to fetch user details"})
+  });
+}
+
+//update User
+export function updateUser(req, res) {
+  const userId = req.user.email; // Using email as identifier from JWT token
+  const updateData = req.body;
+  
+  // Check if password is being updated
+  if (updateData.password) {
+    updateData.password = bcrypt.hashSync(updateData.password, 10);
+  }
+  
+  User.findOneAndUpdate(
+    { email: userId },
+    updateData,
+    { new: true, runValidators: true }
+  )
+    .then((updatedUser) => {
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Generate new token with updated information
+      const token = jwt.sign({
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        userType: updatedUser.userType,
+        profilePicture: updatedUser.profilePicture,
+        phone: updatedUser.phone,
+      }, process.env.JWT_SCRET);
+      
+      res.json({ 
+        message: "User updated successfully", 
+        token: token,
+        user: updatedUser 
+      });
+    })
+    .catch((error) => {
+      res.status(500).json({ error: "Failed to update user", details: error.message });
+    });
+}
+
+export function deleteUser(req, res) {
+  const userId = req.user.email; // Using email as identifier from JWT token
+  
+  User.findOneAndDelete({ email: userId })
+    .then((deletedUser) => {
+      if (!deletedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json({ message: "User account deleted successfully" });
+    })
+    .catch((error) => {
+      res.status(500).json({ error: "Failed to delete user", details: error.message });
+    });
+}
