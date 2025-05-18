@@ -14,10 +14,12 @@ export async function createOrder(req, res) {
     return;
   }
   orderInfo.email = req.user.email;
+  orderInfo.userId = req.user._id;  // Add user ID for referencing in payment
 
+  // Generate order ID with format ORD0001, ORD0002, etc.
   const lastOrder = await Order.find().sort({ orderDate: -1 }).limit(1);
   if (lastOrder.length == 0) {
-    orderInfo.orderId = "ORD001";
+    orderInfo.orderId = "ORD0001";
   } else {
     const lastOrderId = lastOrder[0].orderId; //ORD0065
     const lastOrderNumberInString = lastOrderId.replace("ORD", ""); //0065
@@ -34,14 +36,14 @@ export async function createOrder(req, res) {
       const product = await Product.findOne({ key: data.orderedItems[i].key });
       if (product == null) {
         res.status(404).json({
-          message: "Product with key" + data.orderedItems[i].key + " not found",
+          message: "Product with key " + data.orderedItems[i].key + " not found",
         });
         return;
       }
       if (product.availability == false) {
         res.status(400).json({
           message:
-            "Product with key" + data.orderedItems[i].key + " is not Available",
+            "Product with key " + data.orderedItems[i].key + " is not Available",
         });
         return;
       }
@@ -61,6 +63,7 @@ export async function createOrder(req, res) {
       res.status(500).json({
         message: "Failed to create order",
       });
+      return;
     }
   }
 
@@ -68,31 +71,35 @@ export async function createOrder(req, res) {
   orderInfo.startingDate = data.startingDate;
   orderInfo.endingDate = data.endingDate;
   orderInfo.totalAmount = oneDayCost * data.days;
+  orderInfo.status = "pending"; // Add status field for payment tracking
 
   try {
     const newOrder = new Order(orderInfo);
     const result = await newOrder.save();
-    res.json({
+    
+    // Return more detailed order data for payment processing
+    res.status(201).json({
+      success: true,
       message: "Order created successfully",
-      order : result,
+      order: result,
+      orderId: result._id,
+      total: result.totalAmount
     });
 
   } catch (e) {
     console.log(e);
     res.status(500).json({
+      success: false,
       message: "Failed to create order",
     });
   }
 }
 
-export async function getQuote(req,res){
-  console.log(req.body);
+export async function getQuote(req, res) {
   const data = req.body;
   const orderInfo = {
     orderedItems: [],
   };
-
- 
   
   let oneDayCost = 0;
 
@@ -101,14 +108,14 @@ export async function getQuote(req,res){
       const product = await Product.findOne({ key: data.orderedItems[i].key });
       if (product == null) {
         res.status(404).json({
-          message: "Product with key" + data.orderedItems[i].key + " not found",
+          message: "Product with key " + data.orderedItems[i].key + " not found",
         });
         return;
       }
       if (product.availability == false) {
         res.status(400).json({
           message:
-            "Product with key" + data.orderedItems[i].key + " is not Available",
+            "Product with key " + data.orderedItems[i].key + " is not Available",
         });
         return;
       }
@@ -126,30 +133,123 @@ export async function getQuote(req,res){
       oneDayCost += product.price * data.orderedItems[i].qty;
     } catch (e) {
       res.status(500).json({
-        message: "Failed to create order",
+        message: "Failed to create order quote",
       });
+      return;
     }
   }
 
-  orderInfo.days = data.days;
+  orderInfo.days = data.days || 1; // Default to 1 day if not specified
   orderInfo.startingDate = data.startingDate;
   orderInfo.endingDate = data.endingDate;
-  orderInfo.totalAmount = oneDayCost * data.days;
+  orderInfo.totalAmount = oneDayCost * orderInfo.days;
 
   try {
-   
-    res.json({
-      message: "Order Qutation",
-      total : orderInfo.totalAmount,
+    res.status(200).json({
+      success: true,
+      message: "Order Quotation",
+      total: orderInfo.totalAmount,
     });
-
   } catch (e) {
     console.log(e);
     res.status(500).json({
-      message: "Failed to create order",
+      success: false,
+      message: "Failed to create order quotation",
     });
   }
-
 }
 
+// Get user's orders
+export async function getUserOrders(req, res) {
+  try {
+    const userId = req.user._id;
+    const orders = await Order.find({ userId }).sort({ orderDate: -1 });
+    
+    res.status(200).json({
+      success: true,
+      orders
+    });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch orders' 
+    });
+  }
+}
 
+// Get order details
+export async function getOrderDetails(req, res) {
+  try {
+    const orderId = req.params.id;
+    const userId = req.user._id;
+    
+    const order = await Order.findById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Order not found' 
+      });
+    }
+    
+    // Verify order belongs to user
+    if (order.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Unauthorized access to this order' 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      order
+    });
+  } catch (error) {
+    console.error('Error fetching order details:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch order details' 
+    });
+  }
+}
+
+// Update order status after payment
+export async function updateOrderStatus(req, res) {
+  try {
+    const { orderId, status } = req.body;
+    const userId = req.user._id;
+    
+    const order = await Order.findById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+    
+    // Verify order belongs to user
+    if (order.userId.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized access to this order'
+      });
+    }
+    
+    order.status = status;
+    await order.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Order status updated successfully',
+      order
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update order status'
+    });
+  }
+}

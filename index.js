@@ -10,6 +10,8 @@ import InquiryRouter from "./routes/inquiryRouter.js";
 import cors from "cors";
 import orderRouter from "./routes/orderRouter.js";
 
+
+
 dotenv.config();
 
 const app = express();
@@ -45,6 +47,7 @@ app.use("/api/products", productRouter);
 app.use("/api/reviews", reviewRoter);
 app.use("/api/inquiries",InquiryRouter);
 app.use("/api/orders",orderRouter);
+
 
 app.listen(5000, () => {
   console.log("server is running on port 5000");

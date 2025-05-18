@@ -19,7 +19,7 @@ const productSchema = new mongoose.Schema({
     required : true,
     default : "uncategorized"
   },
-  dimensions : {
+  quantity : {
     type : String,
     required : true
   },
